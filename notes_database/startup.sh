@@ -129,6 +129,19 @@ GRANT CREATE ON SCHEMA public TO ${DB_USER};
 \dn+ public
 EOF
 
+# Apply schema + seed (idempotent) on startup
+echo "Applying notes schema and seed data..."
+if [ -f "init_notes.sql" ]; then
+    # Use the app user so objects are created with correct ownership/permissions.
+    PGPASSWORD="${DB_PASSWORD}" ${PG_BIN}/psql \
+        -h localhost -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} \
+        -v ON_ERROR_STOP=1 \
+        -f "init_notes.sql"
+    echo "✓ Notes schema/seed applied"
+else
+    echo "⚠ init_notes.sql not found; skipping schema initialization"
+fi
+
 # Save connection command to a file
 echo "psql postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}" > db_connection.txt
 echo "Connection string saved to db_connection.txt"
